@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Supplier Tracker — Login</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- ✅ HARD-CODED CONFIG (NO config.js needed) -->
+  <script>
+    window.__SUPABASE_URL__ = "https://ngthitqzqtnvmsthwddl.supabase.co";
+    window.__SUPABASE_ANON_KEY__ = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ndGhpdHF6cXRudm1zdGh3ZGRsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkzNjQ5NTEsImV4cCI6MjA4NDk0MDk1MX0.MSC3lSHfazA4vpbM69lwzkzxpws7aiGAQk8oVPTZXNw";
+    window.__ADMIN_EMAILS__ = ["gshoes@gmail.com","marian@gmail.com","aron@gmail.com"];
+    window.__ATTACHMENTS_BUCKET__ = "order_attachments";
+  </script>
+
+  <style>
+    :root{--bg:#070b15;--border:#233055;--text:#e8ecff;--muted:#9aa6cf;--accent:#7c5cff;--danger:#ff6b6b;--ok:#33d69f;--shadow:0 18px 60px rgba(0,0,0,.55);--radius:16px}
+    *{box-sizing:border-box}
+    body{margin:0;min-height:100vh;display:grid;place-items:center;background:radial-gradient(1200px 500px at 50% 55%, rgba(124,92,255,.25), transparent 65%),radial-gradient(1000px 600px at 20% 10%, rgba(51,214,159,.10), transparent 60%),var(--bg);color:var(--text);font:14px/1.4 ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial}
+    .card{width:min(420px,calc(100vw - 32px));background:linear-gradient(180deg, rgba(13,22,48,.85), rgba(11,18,36,.85));border:1px solid rgba(35,48,85,.9);border-radius:var(--radius);box-shadow:var(--shadow);padding:22px}
+    .title{display:flex;gap:10px;align-items:center;margin-bottom:6px}
+    .lock{width:28px;height:28px;border-radius:10px;background:rgba(124,92,255,.15);display:grid;place-items:center;border:1px solid rgba(124,92,255,.35)}
+    h1{font-size:18px;margin:0}
+    p{margin:0;color:var(--muted)}
+    label{display:block;margin:14px 0 6px;color:var(--muted);font-size:12px}
+    input{width:100%;padding:12px;border-radius:12px;border:1px solid rgba(35,48,85,.9);background:rgba(7,11,21,.65);color:var(--text);outline:none}
+    input:focus{border-color:rgba(124,92,255,.8);box-shadow:0 0 0 3px rgba(124,92,255,.18)}
+    button{width:100%;padding:12px 14px;border-radius:12px;border:0;background:var(--accent);color:#fff;font-weight:700;cursor:pointer;margin-top:14px}
+    button:disabled{opacity:.6;cursor:not-allowed}
+    .msg{margin-top:10px;min-height:18px;font-size:12px}
+    .msg.err{color:var(--danger)} .msg.ok{color:var(--ok)}
+    .tiny{margin-top:10px;font-size:11px;color:var(--muted)}
+  </style>
+</head>
+<body>
+  <div class="card" role="main" aria-label="Login">
+    <div class="title">
+      <div class="lock">🔒</div>
+      <div>
+        <h1>Supplier Tracker Login</h1>
+        <p>Enter your account to access orders.</p>
+      </div>
+    </div>
+
+    <label for="email">Email</label>
+    <input id="email" type="email" placeholder="you@email.com" autocomplete="username" />
+
+    <label for="password">Password</label>
+    <input id="password" type="password" placeholder="••••••••" autocomplete="current-password" />
+
+    <button id="btnLogin" type="button">Login</button>
+    <div id="msg" class="msg"></div>
+
+    <div class="tiny">Tip: Create users in Supabase → Authentication → Users.</div>
+  </div>
+
+  <script>
+    (function(){
+      const msg = document.getElementById('msg');
+      const btn = document.getElementById('btnLogin');
+      const setMsg = (t,k)=>{ msg.textContent=t||''; msg.className='msg '+(k||''); };
+
+      if (!window.supabase){ setMsg('Supabase JS failed to load (CDN).','err'); return; }
+      if (!window.__SUPABASE_URL__ || !window.__SUPABASE_ANON_KEY__){
+        setMsg('Missing Supabase keys. Paste URL + anon key in index.html hard-coded config.','err');
+        return;
+      }
+
+      const supa = window.supabase.createClient(window.__SUPABASE_URL__, window.__SUPABASE_ANON_KEY__);
+
+      async function redirectIfLoggedIn(){
+        const { data: { session } } = await supa.auth.getSession();
+        if (session) location.replace('./orderpage.html');
+      }
+      redirectIfLoggedIn();
+
+      async function doLogin(){
+        setMsg('', '');
+        btn.disabled = true; btn.textContent='Logging in…';
+        const email = document.getElementById('email').value.trim();
+        const password = document.getElementById('password').value.trim();
+        if (!email || !password){
+          setMsg('Please enter email and password.','err');
+          btn.disabled=false; btn.textContent='Login'; return;
+        }
+        const { error } = await supa.auth.signInWithPassword({ email, password });
+        if (error){
+          setMsg(error.message || 'Login failed.','err');
+          btn.disabled=false; btn.textContent='Login'; return;
+        }
+        setMsg('Login successful. Redirecting…','ok');
+        location.replace('./orderpage.html');
+      }
+
+      btn.addEventListener('click', doLogin);
+      document.getElementById('password').addEventListener('keydown', (e)=>{ if (e.key==='Enter') doLogin(); });
+    })();
+  </script>
+</body>
+</html>
